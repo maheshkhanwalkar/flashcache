@@ -2,13 +2,14 @@ package main
 
 import (
 	"flashcache/config"
-	"fmt"
+	"flashcache/server"
+	"log"
 	"os"
 )
 
 func main() {
-	fmt.Println("flashcache")
-	fmt.Println("Reading configuration file....")
+	log.Println("flashcache")
+	log.Println("Reading configuration file....")
 
 	var file string
 
@@ -19,11 +20,14 @@ func main() {
 		file = "conf/server.json"
 	}
 
-	_, err := config.ParseConfig(file)
+	conf, err := config.ParseConfig(file)
 
 	if err != nil {
-		fmt.Println("Error. Could not parse configuration file!")
-		fmt.Println("Specific reason:", err)
-		os.Exit(1)
+		log.Fatalln("Error. Could not parse configuration file:", err)
 	}
+
+	log.Println("Starting server...")
+
+	srv := server.FCServer{Config: conf}
+	srv.Start()
 }
