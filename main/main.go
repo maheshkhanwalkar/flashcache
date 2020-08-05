@@ -29,5 +29,11 @@ func main() {
 	log.Println("Starting server...")
 
 	srv := server.FCServer{Config: conf}
-	srv.Start()
+	err = srv.Start()
+
+	if err != nil {
+		log.Fatalln("Error. Server quit unexpectedly:", err)
+	}
+
+	log.Println("Server shutdown")
 }
