@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flashcache/config"
 	"fmt"
 	"os"
 )
@@ -9,15 +10,20 @@ func main() {
 	fmt.Println("flashcache")
 	fmt.Println("Reading configuration file....")
 
-	var config string
+	var file string
 
 	// Select configuration file
 	if len(os.Args) > 1 {
-		config = os.Args[1]
+		file = os.Args[1]
 	} else {
-		config = "conf/server.yml"
+		file = "conf/server.json"
 	}
 
-	// TODO: remove this line -- only here to placate the compiler
-	fmt.Println(config)
+	_, err := config.ParseConfig(file)
+
+	if err != nil {
+		fmt.Println("Error. Could not parse configuration file!")
+		fmt.Println("Specific reason:", err)
+		os.Exit(1)
+	}
 }
