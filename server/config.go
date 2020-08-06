@@ -1,4 +1,4 @@
-package config
+package server
 
 import (
 	"encoding/json"
@@ -17,6 +17,7 @@ const (
 
 type ServerConfig struct {
 	Type string
+	Address string
 	Port int
 }
 
@@ -27,7 +28,8 @@ func ParseConfig(config string) (*ServerConfig, error) {
 		return nil, err
 	}
 
-	conf := ServerConfig{Port: -1}
+	// Setup default values for port and address
+	conf := ServerConfig{Port: 0, Address: "localhost"}
 	err = json.Unmarshal(raw, &conf)
 
 	if err != nil {

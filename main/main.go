@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flashcache/config"
 	"flashcache/server"
 	"log"
 	"os"
@@ -20,7 +19,7 @@ func main() {
 		file = "conf/server.json"
 	}
 
-	conf, err := config.ParseConfig(file)
+	conf, err := server.ParseConfig(file)
 
 	if err != nil {
 		log.Fatalln("Error. Could not parse configuration file:", err)
