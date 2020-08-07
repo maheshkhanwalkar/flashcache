@@ -4,10 +4,24 @@ import (
 	"errors"
 	"net"
 	"strconv"
+	"sync/atomic"
 )
 
-type FCServer struct {
-	Config *ServerConfig
+type Server struct {
+	config *ServerConfig
+
+	lst net.Listener
+	quit atomic.Value
+}
+
+func NewServer(config *ServerConfig) *Server {
+	srv := Server{}
+
+	srv.config = config
+	srv.lst = nil
+	srv.quit.Store(false)
+
+	return &srv
 }
 
 // Get the equivalent network string for the specified connection type.
@@ -45,8 +59,8 @@ func getAddressString(cType ConnType, rawAddress string, port int) string {
 
 // Start the server, returning an error if it is forced to quit in
 // an unexpected manner
-func (srv *FCServer) Start() error {
-	conf := srv.Config
+func (srv *Server) Start() error {
+	conf := srv.config
 	cType := GetConnType(conf.Type)
 
 	// Handle unknown case
@@ -57,14 +71,36 @@ func (srv *FCServer) Start() error {
 	network := getNetworkString(cType)
 	address := getAddressString(cType, conf.Address, conf.Port)
 
-	lst, err := net.Listen(network, address)
+	var err error
+	srv.lst, err = net.Listen(network, address)
 
 	if err != nil {
 		return err
 	}
 
-	// TODO accept and spawn goroutines to process incoming clients
-	// TODO support a shutdown mechanism to break out of the infinite accept loop
+	srv.quit.Store(false)
 
-	return lst.Close()
+	for {
+		// TODO accept and spawn goroutines to process incoming clients
+		_, err := srv.lst.Accept()
+
+		// Quit signal -- priority over any error(s)
+		if srv.quit.Load().(bool) {
+			break
+		}
+
+		// Break on unexpected error
+		if err != nil {
+			return err
+		}
+	}
+
+	_ = srv.lst.Close()
+	return nil
+}
+
+// Initiates a shutdown on the server
+func (srv *Server) Shutdown() {
+	srv.quit.Store(true)
+	_ = srv.lst.Close()
 }

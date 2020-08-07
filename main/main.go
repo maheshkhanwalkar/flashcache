@@ -4,6 +4,8 @@ import (
 	"flashcache/server"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -27,7 +29,9 @@ func main() {
 
 	log.Println("Starting server...")
 
-	srv := server.FCServer{Config: conf}
+	srv := server.NewServer(conf)
+	setupShutdown(srv)
+
 	err = srv.Start()
 
 	if err != nil {
@@ -35,4 +39,18 @@ func main() {
 	}
 
 	log.Println("Server shutdown")
+}
+
+func setupShutdown(srv *server.Server) {
+	log.Println("Setting up shutdown hook...")
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT)
+
+	go func() {
+		_ = <- sig
+
+		log.Println("Shutting down server...")
+		srv.Shutdown()
+	}()
 }
