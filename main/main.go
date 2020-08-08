@@ -21,7 +21,7 @@ func main() {
 		file = "conf/server.json"
 	}
 
-	conf, err := server.ParseConfig(file)
+	conf, err := server.NewConfiguration(file)
 
 	if err != nil {
 		log.Fatalln("Error. Could not parse configuration file:", err)

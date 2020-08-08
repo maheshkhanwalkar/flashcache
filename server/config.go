@@ -2,8 +2,8 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
-	"strings"
 )
 
 type ConnType int
@@ -12,42 +12,72 @@ const (
 	TCPv4 ConnType = iota
 	TCPv6
 	Unix
-	Unknown
 )
 
 type ServerConfig struct {
-	Type string
-	Address string
-	Port int
+	connType ConnType
+	protoStr string
+	address  string
+	port     int
 }
 
-func ParseConfig(config string) (*ServerConfig, error) {
-	raw, err := ioutil.ReadFile(config)
+type Configuration struct {
+	serverConf *ServerConfig
+}
+
+// Raw JSON format for the server configuration
+type JSONServerConfig struct {
+	Address string
+	Port int
+	Type string
+}
+
+func NewConfiguration(server string) (*Configuration, error) {
+	data, err := ioutil.ReadFile(server)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Setup default values for port and address
-	conf := ServerConfig{Port: 0, Address: "localhost"}
-	err = json.Unmarshal(raw, &conf)
+	var raw JSONServerConfig
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+
+	var conf Configuration
+	var srv *ServerConfig
+
+	srv, err = parseServerConfig(&raw)
 
 	if err != nil {
 		return nil, err
 	}
 
+	conf.serverConf = srv
 	return &conf, nil
 }
 
-func GetConnType(cType string) ConnType {
-	switch strings.ToUpper(cType) {
-	case "TCPV4":
-		return TCPv4
-	case "TCPV6":
-		return TCPv6
-	case "UNIX":
-		return Unix
+func parseServerConfig(raw *JSONServerConfig) (*ServerConfig, error) {
+	var srv ServerConfig
+
+	srv.address = raw.Address
+	srv.port = raw.Port
+
+	switch raw.Type {
+	case "TCPv4":
+		srv.connType = TCPv4
+		srv.protoStr = "tcp4"
+	case "TCPv6":
+		srv.connType = TCPv6
+		srv.protoStr = "tcp6"
+	case "Unix":
+		srv.connType = Unix
+		srv.protoStr = "unix"
 	default:
-		return Unknown
+		msg := "invalid connection type: " + raw.Type
+		return nil, errors.New(msg)
 	}
+
+	return &srv, nil
 }
