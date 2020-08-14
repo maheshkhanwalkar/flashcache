@@ -26,24 +26,21 @@ func main() {
 
 		switch pieces[0] {
 		case "connect":
-			var config string
 
-			// Ignore badly formatted command
-			if len(pieces) > 2 {
-				fmt.Println("Bad connect command -- too many arguments, ignoring command")
-				continue
-			}
-
-			// FIXME: need to have a constants source file -- so if the default changed between the server
-			//  the client will also see the change (automatically via constant sharing)
-			if len(pieces) == 1 {
-				config = "conf/server.json"
-			} else {
-				config = pieces[1]
+			if len(pieces) != 3 {
+				fmt.Println("Bad connect command.")
+				fmt.Println("Expected format: connect tcp{4,6}/unix {address:port,file}")
 			}
 
 			// Establish a connection
-			conn = makeConnection(config)
+			var err error
+
+			conn, err = net.Dial(pieces[1], pieces[2])
+
+			if err != nil {
+				fmt.Println("Could not connect to server. Staying in disconnected state.")
+				conn = nil
+			}
 
 		case "disconnect":
 			if conn != nil {
@@ -61,10 +58,6 @@ func main() {
 	}
 }
 
-func makeConnection(serverConfig string) net.Conn {
-	// TODO
-	return nil
-}
 
 func processCommand(pieces []string) {
 	// TODO
