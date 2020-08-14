@@ -13,8 +13,9 @@ func main() {
 	scan := bufio.NewScanner(os.Stdin)
 
 	var conn net.Conn = nil
+	var quit = false
 
-	for {
+	for !quit {
 		fmt.Print("> ")
 
 		if res := scan.Scan(); !res {
@@ -52,12 +53,18 @@ func main() {
 
 			conn = nil
 
+		case "quit", "exit":
+			if conn != nil {
+				_ = conn.Close()
+			}
+
+			quit = true
+
 		default:
 			processCommand(pieces)
 		}
 	}
 }
-
 
 func processCommand(pieces []string) {
 	// TODO
