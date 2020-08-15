@@ -1,4 +1,4 @@
-package server
+package protocol
 
 type CommandType int
 
@@ -8,8 +8,8 @@ const (
 )
 
 type Command struct {
-	tp CommandType
-	key string
+	tp    CommandType
+	key   string
 	value interface{}
 }
 
