@@ -1,18 +1,20 @@
 package server
 
+import "sync"
+
 type ExecutionEngine struct {
-	store map[string]interface{}
+	store sync.Map
 }
 
 // Put (key, value) into the store
 func (e *ExecutionEngine) Put(key string, value interface{}) {
-	e.store[key] = value
+	e.store.Store(key, value)
 }
 
 // Get the value associated within the given key
 // Returns nil if no such key exists within the store
 func (e *ExecutionEngine) Get(key string) interface{} {
-	value, good := e.store[key]
+	value, good := e.store.Load(key)
 
 	if !good {
 		return nil
@@ -24,5 +26,5 @@ func (e *ExecutionEngine) Get(key string) interface{} {
 // Remove the (key, value) pair from the store
 // Does nothing (no-op) if the key does not exist within the store
 func (e *ExecutionEngine) Remove(key string) {
-	delete(e.store, key)
+	e.store.Delete(key)
 }
