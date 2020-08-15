@@ -1,30 +1,10 @@
 package server
 
-import "sync"
-
 type ExecutionEngine struct {
-	store sync.Map
+	mem *MemoryStore
 }
 
-// Put (key, value) into the store
-func (e *ExecutionEngine) Put(key string, value interface{}) {
-	e.store.Store(key, value)
-}
-
-// Get the value associated within the given key
-// Returns nil if no such key exists within the store
-func (e *ExecutionEngine) Get(key string) interface{} {
-	value, good := e.store.Load(key)
-
-	if !good {
-		return nil
-	}
-
-	return value
-}
-
-// Remove the (key, value) pair from the store
-// Does nothing (no-op) if the key does not exist within the store
-func (e *ExecutionEngine) Remove(key string) {
-	e.store.Delete(key)
+// FIXME: add command parameter to execute
+func (e *ExecutionEngine) Execute() {
+	// TODO
 }
