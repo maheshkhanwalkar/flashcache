@@ -26,6 +26,8 @@ func main() {
 		pieces := strings.Split(line, " ")
 
 		switch pieces[0] {
+		// FIXME: simply the connect command, since it leaks Go API requirements to the user directly
+		//  which is not good practice
 		case "connect":
 
 			if len(pieces) != 3 {
