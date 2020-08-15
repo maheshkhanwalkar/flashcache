@@ -80,7 +80,7 @@ func makeAddress(ip string, port int, connType ConnType) string {
 }
 
 func parseServerConfig(raw *JSONServerConfig) (*Configuration, error) {
-	var srv Configuration
+	var srv = new(Configuration)
 
 	srv.address = raw.Address
 	srv.port = raw.Port
@@ -100,5 +100,5 @@ func parseServerConfig(raw *JSONServerConfig) (*Configuration, error) {
 		return nil, errors.New(msg)
 	}
 
-	return &srv, nil
+	return srv, nil
 }

@@ -15,24 +15,24 @@ type Command struct {
 
 // Create a new GET command
 func NewGet(key string) *Command {
-	var cmd Command
+	var cmd = new(Command)
 
 	cmd.tp = GET
 	cmd.key = key
 	cmd.value = nil
 
-	return &cmd
+	return cmd
 }
 
 // Create a new PUT command
 func NewPut(key string, value interface{}) *Command {
-	var cmd Command
+	var cmd = new(Command)
 
 	cmd.tp = PUT
 	cmd.key = key
 	cmd.value = value
 
-	return &cmd
+	return cmd
 }
 
 func (c *Command) Type() CommandType {
