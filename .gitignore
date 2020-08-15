@@ -13,3 +13,7 @@
 
 # GoLand project files
 .idea/
+
+# flashcache configuration
+conf/
+
