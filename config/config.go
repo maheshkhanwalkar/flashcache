@@ -1,9 +1,11 @@
-package server
+package config
 
 import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"net"
+	"strconv"
 )
 
 type ConnType int
@@ -14,15 +16,12 @@ const (
 	Unix
 )
 
-type ServerConfig struct {
+type Configuration struct {
 	connType ConnType
-	protoStr string
 	address  string
 	port     int
-}
 
-type Configuration struct {
-	serverConf *ServerConfig
+	protoStr string
 }
 
 // Raw JSON format for the server configuration
@@ -45,21 +44,43 @@ func NewConfiguration(server string) (*Configuration, error) {
 		return nil, err
 	}
 
-	var conf Configuration
-	var srv *ServerConfig
-
-	srv, err = parseServerConfig(&raw)
+	conf, err := parseServerConfig(&raw)
 
 	if err != nil {
 		return nil, err
 	}
 
-	conf.serverConf = srv
-	return &conf, nil
+	return conf, nil
 }
 
-func parseServerConfig(raw *JSONServerConfig) (*ServerConfig, error) {
-	var srv ServerConfig
+func (c *Configuration) MakeServer() (net.Listener, error) {
+	address := makeAddress(c.address, c.port, c.connType)
+	return net.Listen(c.protoStr, address)
+}
+
+func (c *Configuration) MakeClient() (net.Conn, error) {
+	address := makeAddress(c.address, c.port, c.connType)
+	return net.Dial(c.protoStr, address)
+}
+
+// Create an address string based on the given connection type
+func makeAddress(ip string, port int, connType ConnType) string {
+	if connType == Unix {
+		return ip
+	}
+
+	if connType == TCPv6 {
+		// Ensure IPv6 address is enclosed in brackets
+		if ip[0] != '[' {
+			ip = "[" + ip + "]"
+		}
+	}
+
+	return ip + ":" + strconv.Itoa(port)
+}
+
+func parseServerConfig(raw *JSONServerConfig) (*Configuration, error) {
+	var srv Configuration
 
 	srv.address = raw.Address
 	srv.port = raw.Port

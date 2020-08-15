@@ -1,11 +1,9 @@
 package main
 
 import (
-	"flashcache/server"
+	"flashcache/config"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -21,7 +19,7 @@ func main() {
 		file = "conf/server.json"
 	}
 
-	conf, err := server.NewConfiguration(file)
+	_, err := config.NewConfiguration(file)
 
 	if err != nil {
 		log.Fatalln("Error. Could not parse configuration file:", err)
@@ -29,19 +27,20 @@ func main() {
 
 	log.Println("Starting server...")
 
-	srv := server.NewServer(conf)
-	setupShutdown(srv)
+	// srv := server.NewServer(conf)
+	// setupShutdown(srv)
 
-	err = srv.Start()
+	/* err = srv.Start()
 
 	if err != nil {
 		log.Fatalln("Error. Server quit unexpectedly:", err)
 	}
+	*/
 
 	log.Println("Server shutdown")
 }
 
-func setupShutdown(srv *server.Server) {
+/*func setupShutdown(srv *server.Server) {
 	log.Println("Setting up shutdown hook...")
 
 	sig := make(chan os.Signal, 1)
@@ -54,3 +53,4 @@ func setupShutdown(srv *server.Server) {
 		srv.Shutdown()
 	}()
 }
+*/

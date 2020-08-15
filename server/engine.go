@@ -18,9 +18,9 @@ func (e *ExecutionEngine) Execute(cmd *protocol.Command) {
 }
 
 func (e *ExecutionEngine) executeGet(cmd *protocol.Command) {
-	e.mem.Get(cmd.key)
+	e.mem.Get(cmd.Key())
 }
 
 func (e *ExecutionEngine) executePut(cmd *protocol.Command) {
-	e.mem.Put(cmd.key, cmd.value)
+	e.mem.Put(cmd.Key(), cmd.Value())
 }
