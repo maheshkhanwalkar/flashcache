@@ -12,8 +12,50 @@ const (
 // Read a command from the input buffer and return the constructed object along with
 // the number of bytes consumed. Returns an error if the input is invalid or not long enough
 func ReadCommand(buffer []byte) (*Command, int, error) {
-	// TODO
-	return nil, 0, nil
+	if len(buffer) < 3 {
+		return nil, 0, errors.New("buffer is too small")
+	}
+
+	tp, err := getCommandType(buffer[0])
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	cmd := new(Command)
+	cmd.tp = tp
+
+	keySize := binary.LittleEndian.Uint16(buffer[1:3])
+
+	if int(keySize) > MaxKeySize || keySize < 0 {
+		return nil, 0, errors.New("provided key is too long or negative")
+	}
+
+	if len(buffer) - 3 < int(keySize) {
+		return nil, 0, errors.New("buffer does not contain the entire key")
+	}
+
+	cmd.key = string(buffer[3:3+keySize])
+	var count = 1 + 2 + int(keySize)
+
+	if cmd.tp == PUT {
+		opBuf := buffer[3+keySize:]
+
+		if len(opBuf) < 3 {
+			return nil, 0, errors.New("buffer does not contain operand byte")
+		}
+
+		op, opCount, err := getOperand(opBuf)
+
+		if err != nil {
+			return nil, 0, err
+		}
+
+		cmd.value = op
+		count += opCount
+	}
+
+	return cmd, count, nil
 }
 
 // Convert the provided command into its raw byte form, which can be written over the network
@@ -27,7 +69,7 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 
 	var keySize = len(cmd.key)
 
-	if keySize > MaxKeySize || keySize < 0 {
+	if keySize > MaxKeySize {
 		return nil, errors.New("provided key is too long or negative")
 	}
 
@@ -53,7 +95,7 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 	return buffer, nil
 }
 
-// Get the command segment value for the given command type
+// Get the command byte value for the given command type
 // Returns an error if the command type is invalid
 func getCommandByte(tp CommandType) (byte, error) {
 	switch tp {
@@ -63,6 +105,19 @@ func getCommandByte(tp CommandType) (byte, error) {
 		return 1, nil
 	default:
 		return -1, errors.New("invalid command type")
+	}
+}
+
+// Get the command type associated with the given command byte value
+// Returns an error if the command byte is invalid
+func getCommandType(cb byte) (CommandType, error) {
+	switch cb {
+	case 0:
+		return GET, nil
+	case 1:
+		return PUT, nil
+	default:
+		return -1, errors.New("invalid command byte")
 	}
 }
 
@@ -76,6 +131,20 @@ func getOpByte(value interface{}) (byte, error) {
 		return 1, nil
 	default:
 		return -1, errors.New("invalid operand value")
+	}
+}
+
+// Get the operand from the operand buffer
+// Returns an error if the operand byte value is invalid
+func getOperand(opBuf []byte) (interface{}, int, error) {
+	switch opBuf[0] {
+	case 0:
+		return int(binary.LittleEndian.Uint32(opBuf[1:5])), 5, nil
+	case 1:
+		opSize := binary.LittleEndian.Uint16(opBuf[1:3])
+		return string(opBuf[3:3+opSize]), int(2 + opSize), nil
+	default:
+		return nil, -1, errors.New("invalid operand byte")
 	}
 }
 
