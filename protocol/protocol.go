@@ -83,11 +83,11 @@ func getOpByte(value interface{}) (byte, error) {
 func appendOp(buffer []byte, value interface{}) []byte {
 	switch value.(type) {
 	case int:
-		buffer = append(buffer, 0, 0, 0, 0)
+		buffer = append(buffer, make([]byte, 4)...)
 		binary.LittleEndian.PutUint32(buffer[len(buffer) - 4:], value.(uint32))
 
 	case string:
-		buffer = append(buffer, 0, 0)
+		buffer = append(buffer, make([]byte, 2)...)
 		binary.LittleEndian.PutUint16(buffer[len(buffer) - 2:], uint16(len(value.(string))))
 
 		buffer = append(buffer, value.(string)...)
