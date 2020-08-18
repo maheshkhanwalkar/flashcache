@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"flashcache/config"
+	"flashcache/server"
 	"fmt"
 	"net"
 	"os"
@@ -26,24 +28,30 @@ func main() {
 		pieces := strings.Split(line, " ")
 
 		switch pieces[0] {
-		// FIXME: simply the connect command, since it leaks Go API requirements to the user directly
-		//  which is not good practice
 		case "connect":
+			var path string
 
-			if len(pieces) != 3 {
-				fmt.Println("Bad connect command.")
-				fmt.Println("Expected format: connect tcp{4,6}/unix {address:port,file}")
+			if len(pieces) == 1 {
+				path = server.DefaultConfigPath
+			} else {
+				path = pieces[1]
 			}
 
-			// Establish a connection
-			var err error
-
-			conn, err = net.Dial(pieces[1], pieces[2])
+			conf, err := config.NewConfiguration(path)
 
 			if err != nil {
-				fmt.Println("Could not connect to server. Staying in disconnected state.")
-				conn = nil
+				fmt.Println("Could not parse provided configuration file:", err)
+				continue
 			}
+
+			conn, err = conf.MakeClient()
+
+			if err != nil {
+				fmt.Println("Could not connect to server:", err)
+				continue
+			}
+
+			fmt.Println("Successfully connected to the server")
 
 		case "disconnect":
 			if conn != nil {

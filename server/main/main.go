@@ -2,6 +2,7 @@ package main
 
 import (
 	"flashcache/config"
+	"flashcache/server"
 	"log"
 	"os"
 )
@@ -16,7 +17,7 @@ func main() {
 	if len(os.Args) > 1 {
 		file = os.Args[1]
 	} else {
-		file = "conf/server.json"
+		file = server.DefaultConfigPath
 	}
 
 	_, err := config.NewConfiguration(file)

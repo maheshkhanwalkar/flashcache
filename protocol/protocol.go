@@ -104,7 +104,7 @@ func getCommandByte(tp CommandType) (byte, error) {
 	case PUT:
 		return 1, nil
 	default:
-		return -1, errors.New("invalid command type")
+		return 0, errors.New("invalid command type")
 	}
 }
 
@@ -117,7 +117,7 @@ func getCommandType(cb byte) (CommandType, error) {
 	case 1:
 		return PUT, nil
 	default:
-		return -1, errors.New("invalid command byte")
+		return 0, errors.New("invalid command byte")
 	}
 }
 
@@ -130,7 +130,7 @@ func getOpByte(value interface{}) (byte, error) {
 	case string:
 		return 1, nil
 	default:
-		return -1, errors.New("invalid operand value")
+		return 0, errors.New("invalid operand value")
 	}
 }
 
