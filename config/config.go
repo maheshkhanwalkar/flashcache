@@ -31,8 +31,10 @@ type JSONServerConfig struct {
 	Type string
 }
 
-func NewConfiguration(server string) (*Configuration, error) {
-	data, err := ioutil.ReadFile(server)
+// Load a configuration from the provided server configuration file
+// Returns *Configuration on success or returns an error if the reading/parsing failed
+func NewConfiguration(file string) (*Configuration, error) {
+	data, err := ioutil.ReadFile(file)
 
 	if err != nil {
 		return nil, err
@@ -53,11 +55,15 @@ func NewConfiguration(server string) (*Configuration, error) {
 	return conf, nil
 }
 
+// Create a server based on the current configuration parameters
+// Returns a listener on success or returns an error if the server could not be created
 func (c *Configuration) MakeServer() (net.Listener, error) {
 	address := makeAddress(c.address, c.port, c.connType)
 	return net.Listen(c.protoStr, address)
 }
 
+// Connect to the server specified by the current connection parameters
+// Returns a connection on success or returns an error if the connection could not be established
 func (c *Configuration) MakeClient() (net.Conn, error) {
 	address := makeAddress(c.address, c.port, c.connType)
 	return net.Dial(c.protoStr, address)
@@ -79,6 +85,8 @@ func makeAddress(ip string, port int, connType ConnType) string {
 	return ip + ":" + strconv.Itoa(port)
 }
 
+// Convert the raw JSON object into a Configuration object, applying validation of
+// the input fields, returning an error if any of the values are invalid
 func parseServerConfig(raw *JSONServerConfig) (*Configuration, error) {
 	var srv = new(Configuration)
 
