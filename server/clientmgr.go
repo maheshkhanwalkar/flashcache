@@ -42,8 +42,8 @@ func (srv *ClientManager) Start() error {
 			}
 		}
 
-		// TODO: process data coming from the new connection
-		_ = conn
+		// Process the connection's requests
+		go srv.processConn(conn)
 	}
 
 	return nil
@@ -53,4 +53,8 @@ func (srv *ClientManager) Start() error {
 func (srv *ClientManager) Shutdown() {
 	srv.quit.Store(true)
 	_ = srv.lst.Close()
+}
+
+func (srv *ClientManager) processConn(conn net.Conn) {
+	// TODO
 }
