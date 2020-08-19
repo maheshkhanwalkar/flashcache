@@ -31,11 +31,11 @@ func ReadCommand(buffer []byte) (*Command, int, error) {
 		return nil, 0, errors.New("provided key is too long or negative")
 	}
 
-	if len(buffer) - 3 < int(keySize) {
+	if len(buffer)-3 < int(keySize) {
 		return nil, 0, errors.New("buffer does not contain the entire key")
 	}
 
-	cmd.key = string(buffer[3:3+keySize])
+	cmd.key = string(buffer[3 : 3+keySize])
 	var count = 1 + 2 + int(keySize)
 
 	if cmd.tp == PUT {
@@ -142,7 +142,7 @@ func getOperand(opBuf []byte) (interface{}, int, error) {
 		return int(binary.LittleEndian.Uint32(opBuf[1:5])), 5, nil
 	case 1:
 		opSize := binary.LittleEndian.Uint16(opBuf[1:3])
-		return string(opBuf[3:3+opSize]), int(2 + opSize), nil
+		return string(opBuf[3 : 3+opSize]), int(2 + opSize), nil
 	default:
 		return nil, -1, errors.New("invalid operand byte")
 	}
@@ -153,11 +153,11 @@ func appendOp(buffer []byte, value interface{}) []byte {
 	switch value.(type) {
 	case int:
 		buffer = append(buffer, make([]byte, 4)...)
-		binary.LittleEndian.PutUint32(buffer[len(buffer) - 4:], value.(uint32))
+		binary.LittleEndian.PutUint32(buffer[len(buffer)-4:], value.(uint32))
 
 	case string:
 		buffer = append(buffer, make([]byte, 2)...)
-		binary.LittleEndian.PutUint16(buffer[len(buffer) - 2:], uint16(len(value.(string))))
+		binary.LittleEndian.PutUint16(buffer[len(buffer)-2:], uint16(len(value.(string))))
 
 		buffer = append(buffer, value.(string)...)
 	}

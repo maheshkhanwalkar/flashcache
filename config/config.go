@@ -27,8 +27,8 @@ type Configuration struct {
 // Raw JSON format for the server configuration
 type JSONServerConfig struct {
 	Address string
-	Port int
-	Type string
+	Port    int
+	Type    string
 }
 
 // Load a configuration from the provided server configuration file
