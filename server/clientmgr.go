@@ -2,6 +2,7 @@ package server
 
 import (
 	"flashcache/config"
+	"flashcache/protocol"
 	"net"
 	"sync/atomic"
 )
@@ -55,6 +56,48 @@ func (srv *ClientManager) Shutdown() {
 	_ = srv.lst.Close()
 }
 
+// Process a connection's requests
 func (srv *ClientManager) processConn(conn net.Conn) {
-	// TODO
+	// Close the connection when the function returns
+	defer conn.Close()
+
+	var buffer = make([]byte, 4096)
+	var offset = 0
+
+	for {
+		lim, err := conn.Read(buffer[offset:])
+
+		// Stop processing this client and exit out
+		if err != nil {
+			_ = conn.Close()
+			break
+		}
+
+		actual := buffer[:lim]
+		var pos = 0
+
+		for {
+			cmd, n, err := protocol.ReadCommand(actual)
+
+			if err != nil {
+				// TODO should write an error msg back to the client and close the connection
+				if _, ok := err.(protocol.PartialCommandError); !ok {
+					return
+				}
+
+				// TODO process partial command error -- need to adjust the buffer offset so that
+				//  the next call to Read() doesn't overwrite the partial command and copy those
+				//  bytes to the top of the buffer
+
+				break
+			}
+
+			// TODO process the command
+			_ = cmd
+
+			// Update the slice to process the next command
+			pos += n
+			actual = buffer[pos:lim]
+		}
+	}
 }
