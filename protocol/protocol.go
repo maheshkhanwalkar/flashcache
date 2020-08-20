@@ -31,18 +31,18 @@ func ReadCommand(buffer []byte) (*Command, int, error) {
 		return nil, 0, errors.New("provided key is too long or negative")
 	}
 
-	if len(buffer)-3 < int(keySize) {
-		return nil, 0, errors.New("buffer does not contain the entire key")
+	if len(buffer) - 3 < int(keySize) {
+		return nil, 0, PartialCommandError{"buffer does not contain the entire key"}
 	}
 
-	cmd.key = string(buffer[3 : 3+keySize])
+	cmd.key = string(buffer[3 : 3 + keySize])
 	var count = 1 + 2 + int(keySize)
 
 	if cmd.tp == PUT {
-		opBuf := buffer[3+keySize:]
+		opBuf := buffer[3 + keySize:]
 
 		if len(opBuf) < 3 {
-			return nil, 0, errors.New("buffer does not contain operand byte")
+			return nil, 0, PartialCommandError{"buffer does not contain operand byte"}
 		}
 
 		op, opCount, err := getOperand(opBuf)
