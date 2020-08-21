@@ -16,6 +16,9 @@ const (
 	MaxStringSize = 512
 )
 
+// FIXME: these methods should be optimised to reduce unnecessary slice creation
+//  and copying -- since these operands are slow...
+
 // Read an integer from the given slice
 // Returns an error if the provided slice is smaller than 4 bytes long
 func ReadInt(buffer []byte) (int, error) {
@@ -63,4 +66,42 @@ func ReadOperand(buffer []byte) (Operand, interface{}, error) {
 	default:
 		return 0, nil, errors.New("unknown operand specified")
 	}
+}
+
+// Write the integer into a slice and return the result
+func WriteInt(num int) []byte {
+	buffer := make([]byte, 4)
+
+	binary.LittleEndian.PutUint32(buffer, uint32(num))
+	return buffer
+}
+
+// Write the string into a slice and return the result
+func WriteString(str string) []byte {
+	buffer := make([]byte, 4 + len(str))
+
+	copy(buffer, WriteInt(len(str)))
+	copy(buffer[4:], str)
+
+	return buffer
+}
+
+// Write the operand into a slice and return the result
+func WriteOperand(op Operand, data interface{}) []byte {
+	var tp = byte(op)
+	var payload []byte
+
+	switch op {
+	case INTEGER:
+		payload = WriteInt(data.(int))
+	case STRING:
+		payload = WriteString(data.(string))
+	}
+
+	var full = make([]byte, 1 + len(payload))
+
+	full[0] = tp
+	copy(full[1:], payload)
+
+	return full
 }
