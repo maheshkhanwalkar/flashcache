@@ -10,7 +10,7 @@ const (
 type Command struct {
 	tp    CommandType
 	key   string
-	value interface{}
+	value *Operand
 }
 
 // Create a new GET command
@@ -25,7 +25,7 @@ func NewGet(key string) *Command {
 }
 
 // Create a new PUT command
-func NewPut(key string, value interface{}) *Command {
+func NewPut(key string, value *Operand) *Command {
 	var cmd = new(Command)
 
 	cmd.tp = PUT
@@ -43,6 +43,6 @@ func (c *Command) Key() string {
 	return c.key
 }
 
-func (c *Command) Value() interface{} {
+func (c *Command) Value() *Operand {
 	return c.value
 }

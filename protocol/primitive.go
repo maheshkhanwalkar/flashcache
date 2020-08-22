@@ -75,33 +75,33 @@ func ReadOperand(buffer []byte) (Operand, []byte, error) {
 	}
 }
 
-// Write the integer into the provided slice
+// Write the integer into the provided slice and return a new slice pointing to the first byte not processed.
 // Returns an error if the slice is not large enough
-func WriteInt(num int, buffer []byte) error {
+func WriteInt(num int, buffer []byte) ([]byte, error) {
 	if len(buffer) < 4 {
-		return BufferTooSmallError{}
+		return nil, BufferTooSmallError{}
 	}
 
 	binary.LittleEndian.PutUint32(buffer, uint32(num))
-	return nil
+	return buffer[4:], nil
 }
 
 // Write the string into the provided slice
 // Returns an error if the slice is not big enough
-func WriteString(str string, buffer []byte) error {
+func WriteString(str string, buffer []byte) ([]byte, error) {
 	if len(buffer) < 4 + len(str) {
-		return BufferTooSmallError{}
+		return nil, BufferTooSmallError{}
 	}
 
 	// error ignored because buffer is guaranteed large enough
-	_ = WriteInt(len(str), buffer)
-	copy(buffer[4:], str)
+	buffer, _ = WriteInt(len(str), buffer)
+	copy(buffer, str)
 
-	return nil
+	return buffer[len(str):], nil
 }
 
 // Compute the number of bytes needed to store the particular operand
-func ComputeOperandSize(op Operand) int {
+func ComputeOperandSize(op *Operand) int {
 	var sz = 1
 
 	switch op.tp {
@@ -116,21 +116,21 @@ func ComputeOperandSize(op Operand) int {
 
 // Write the operand into the provided slice
 // Returns an error if the slice is not large enough to store the operand
-func WriteOperand(op Operand, buffer []byte) error {
+func WriteOperand(op *Operand, buffer []byte) ([]byte, error) {
 	var tp = byte(op.tp)
 
 	if len(buffer) < ComputeOperandSize(op) {
-		return BufferTooSmallError{}
+		return nil, BufferTooSmallError{}
 	}
 
 	buffer[0] = tp
 
 	switch op.tp {
 	case INTEGER:
-		_ = WriteInt(op.data.(int), buffer[1:])
+		buffer, _ = WriteInt(op.data.(int), buffer[1:])
 	case STRING:
-		_ = WriteString(op.data.(string), buffer[1:])
+		buffer, _ = WriteString(op.data.(string), buffer[1:])
 	}
 
-	return nil
+	return buffer, nil
 }
