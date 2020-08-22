@@ -30,7 +30,9 @@ func ReadInt(buffer []byte) (int, []byte, error) {
 		return 0, nil, BufferTooSmallError{}
 	}
 
-	return int(binary.LittleEndian.Uint32(buffer)), buffer[4:], nil
+	// FIXME: maybe it's worth switching from using int to explicitly using int32, since it is not guaranteed
+	//  that int is 4 bytes -- it could be larger, causing silent and endian-specific issues...
+	return int(int32(binary.LittleEndian.Uint32(buffer))), buffer[4:], nil
 }
 
 // Read a string from the given slice and return a new slice starting at the first unprocessed byte
