@@ -16,9 +16,6 @@ const (
 	MaxStringSize = 512
 )
 
-// FIXME: these methods should be optimised to reduce unnecessary slice creation
-//  and copying -- since these operands are slow...
-
 // Read an integer from the given slice
 // Returns an error if the provided slice is smaller than 4 bytes long
 func ReadInt(buffer []byte) (int, error) {
@@ -68,40 +65,62 @@ func ReadOperand(buffer []byte) (Operand, interface{}, error) {
 	}
 }
 
-// Write the integer into a slice and return the result
-func WriteInt(num int) []byte {
-	buffer := make([]byte, 4)
+// Write the integer into the provided slice
+// Returns an error if the slice is not large enough
+func WriteInt(num int, buffer []byte) error {
+	if len(buffer) < 4 {
+		return errors.New("buffer is too small")
+	}
 
 	binary.LittleEndian.PutUint32(buffer, uint32(num))
-	return buffer
+	return nil
 }
 
-// Write the string into a slice and return the result
-func WriteString(str string) []byte {
-	buffer := make([]byte, 4 + len(str))
+// Write the string into the provided slice
+// Returns an error if the slice is not big enough
+func WriteString(str string, buffer []byte) error {
+	if len(buffer) < 4 + len(str) {
+		return errors.New("buffer is too small")
+	}
 
-	copy(buffer, WriteInt(len(str)))
+	// error ignored because buffer is guaranteed large enough
+	_ = WriteInt(len(str), buffer)
 	copy(buffer[4:], str)
 
-	return buffer
+	return nil
 }
 
-// Write the operand into a slice and return the result
-func WriteOperand(op Operand, data interface{}) []byte {
-	var tp = byte(op)
-	var payload []byte
+// Compute the number of bytes needed to store the particular operand
+func ComputeOperandSize(op Operand, data interface{}) int {
+	var sz = 1
 
 	switch op {
 	case INTEGER:
-		payload = WriteInt(data.(int))
+		return sz + 4
 	case STRING:
-		payload = WriteString(data.(string))
+		return sz + 4 + len(data.(string))
 	}
 
-	var full = make([]byte, 1 + len(payload))
+	return sz
+}
 
-	full[0] = tp
-	copy(full[1:], payload)
+// Write the operand into the provided slice
+// Returns an error if the slice is not large enough to store the operand
+func WriteOperand(op Operand, data interface{}, buffer []byte) error {
+	var tp = byte(op)
 
-	return full
+	if len(buffer) < ComputeOperandSize(op, data) {
+		return errors.New("buffer is too small")
+	}
+
+	buffer[0] = tp
+
+	switch op {
+	case INTEGER:
+		_ = WriteInt(data.(int), buffer[1:])
+	case STRING:
+		_ = WriteString(data.(string), buffer[1:])
+	}
+
+	return nil
 }
