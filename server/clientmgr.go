@@ -64,6 +64,9 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 	var buffer = make([]byte, 4096)
 	var offset = 0
 
+	// TODO: the buffer manipulation details should be extracted out and placed somewhere else
+	//  since this will be a problem in both the client and the server programs
+
 	for {
 		lim, err := conn.Read(buffer[offset:])
 
@@ -73,9 +76,9 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 			break
 		}
 
-		actual := buffer[:lim]
+		actual := buffer[:offset+lim]
 
-		for {
+		for len(actual) > 0 {
 			cmd, next, err := protocol.ReadCommand(actual)
 
 			if err != nil {
@@ -84,9 +87,12 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 					return
 				}
 
-				// TODO process partial command error -- need to adjust the buffer offset so that
-				//  the next call to Read() doesn't overwrite the partial command and copy those
-				//  bytes to the top of the buffer
+				// Copy the remaining bytes to the start of the buffer and adjust the offset
+				// That way, the next read will not overwrite these bytes
+				rem := len(actual)
+
+				copy(buffer, buffer[len(buffer) - rem:])
+				offset = rem
 
 				break
 			}
