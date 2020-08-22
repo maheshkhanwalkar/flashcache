@@ -74,14 +74,13 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 		}
 
 		actual := buffer[:lim]
-		var pos = 0
 
 		for {
-			cmd, n, err := protocol.ReadCommand(actual)
+			cmd, next, err := protocol.ReadCommand(actual)
 
 			if err != nil {
 				// TODO should write an error msg back to the client and close the connection
-				if _, ok := err.(protocol.PartialCommandError); !ok {
+				if _, ok := err.(protocol.BufferTooSmallError); !ok {
 					return
 				}
 
@@ -96,8 +95,7 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 			_ = cmd
 
 			// Update the slice to process the next command
-			pos += n
-			actual = buffer[pos:lim]
+			actual = next
 		}
 	}
 }

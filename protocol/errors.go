@@ -1,10 +1,10 @@
 package protocol
 
-type PartialCommandError struct {
-	msg string
+// Error indicating that the provided buffer slice is too small, that is, the
+// current length should be longer to contain the entire payload
+type BufferTooSmallError struct {
 }
 
-// Return the error message
-func (err PartialCommandError) Error() string {
-	return err.msg
+func (err BufferTooSmallError) Error() string {
+	return "buffer is too small"
 }

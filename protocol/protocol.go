@@ -9,54 +9,48 @@ const (
 	MaxKeySize int = 256
 )
 
-// Read a command from the input buffer and return the constructed object along with
-// the number of bytes consumed. Returns an error if the input is invalid or not long enough
-func ReadCommand(buffer []byte) (*Command, int, error) {
-	if len(buffer) < 3 {
-		return nil, 0, errors.New("buffer is too small")
+// Read a command from the input buffer and return the constructed object along with a new slice
+// which starts at the next byte to be consumed. Returns an error if the input is invalid or not long enough
+func ReadCommand(buffer []byte) (*Command, []byte, error) {
+	if len(buffer) == 0 {
+		return nil, nil, BufferTooSmallError{}
 	}
 
+	// FIXME: probably should just reduce this to a switch statement, rather than having a
+	//  separate function dedicated to do some sort of cast + validation
 	tp, err := getCommandType(buffer[0])
 
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, err
 	}
 
 	cmd := new(Command)
 	cmd.tp = tp
 
-	keySize := binary.LittleEndian.Uint16(buffer[1:3])
+	key, buffer, err := ReadString(buffer[1:])
 
-	if int(keySize) > MaxKeySize || keySize < 0 {
-		return nil, 0, errors.New("provided key is too long or negative")
+	if err != nil {
+		return nil, nil, BufferTooSmallError{}
 	}
 
-	if len(buffer) - 3 < int(keySize) {
-		return nil, 0, PartialCommandError{"buffer does not contain the entire key"}
-	}
+	cmd.key = key
 
-	cmd.key = string(buffer[3 : 3 + keySize])
-	var count = 1 + 2 + int(keySize)
-
-	if cmd.tp == PUT {
-		opBuf := buffer[3 + keySize:]
-
-		if len(opBuf) < 3 {
-			return nil, 0, PartialCommandError{"buffer does not contain operand byte"}
-		}
-
-		op, opCount, err := getOperand(opBuf)
+	if hasOperand(cmd.tp) {
+		op, buffer, err := ReadOperand(buffer)
 
 		if err != nil {
-			return nil, 0, err
+			return nil, nil, err
 		}
 
-		cmd.value = op
-		count += opCount
+		cmd.value = op.data
+		return cmd, buffer, nil
 	}
 
-	return cmd, count, nil
+	return cmd, buffer, nil
 }
+
+// FIXME: update WriteCommand to use the operand helper methods, instead of what is currently
+//  being done
 
 // Convert the provided command into its raw byte form, which can be written over the network
 // and parsed back into its original object form
@@ -121,6 +115,18 @@ func getCommandType(cb byte) (CommandType, error) {
 	}
 }
 
+// Returns whether the given command type takes an operand or not
+func hasOperand(tp CommandType) bool {
+	switch tp {
+	case GET:
+		return false
+	case PUT:
+		return true
+	default:
+		return false
+	}
+}
+
 // Get the operand segment value and size for the given command type
 // Returns an error if the operand value type is invalid
 func getOpByte(value interface{}) (byte, error) {
@@ -131,20 +137,6 @@ func getOpByte(value interface{}) (byte, error) {
 		return 1, nil
 	default:
 		return 0, errors.New("invalid operand value")
-	}
-}
-
-// Get the operand from the operand buffer
-// Returns an error if the operand byte value is invalid
-func getOperand(opBuf []byte) (interface{}, int, error) {
-	switch opBuf[0] {
-	case 0:
-		return int(binary.LittleEndian.Uint32(opBuf[1:5])), 5, nil
-	case 1:
-		opSize := binary.LittleEndian.Uint16(opBuf[1:3])
-		return string(opBuf[3 : 3+opSize]), int(2 + opSize), nil
-	default:
-		return nil, -1, errors.New("invalid operand byte")
 	}
 }
 

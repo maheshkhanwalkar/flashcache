@@ -5,63 +5,73 @@ import (
 	"errors"
 )
 
-type Operand int
+// Operand type
+type OpType int
 
 const (
-	INTEGER Operand = iota
+	INTEGER OpType = iota
 	STRING
 )
+
+// Operand
+type Operand struct {
+	tp OpType
+	data interface{}
+}
 
 const (
 	MaxStringSize = 512
 )
 
-// Read an integer from the given slice
+// Read an integer from the given slice and return a new slice starting at the first unprocessed byte
 // Returns an error if the provided slice is smaller than 4 bytes long
-func ReadInt(buffer []byte) (int, error) {
+func ReadInt(buffer []byte) (int, []byte, error) {
 	if len(buffer) < 4 {
-		return 0, errors.New("buffer is not large enough")
+		return 0, nil, BufferTooSmallError{}
 	}
 
-	return int(binary.LittleEndian.Uint32(buffer)), nil
+	return int(binary.LittleEndian.Uint32(buffer)), buffer[4:], nil
 }
 
-// Read a string from the given slice
+// Read a string from the given slice and return a new slice starting at the first unprocessed byte
 // Returns an error if the provided slice is smaller than the specified string length
-func ReadString(buffer []byte) (string, error) {
-	sz, err := ReadInt(buffer)
+func ReadString(buffer []byte) (string, []byte, error) {
+	sz, buffer, err := ReadInt(buffer)
 
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if sz > MaxStringSize {
-		return "", errors.New("specified string length is too long")
+		return "", nil, errors.New("specified string length is too long")
 	}
 
-	if len(buffer) < 4 + sz {
-		return "", errors.New("buffer is not large enough")
+	if sz < 0 {
+		return "", nil, errors.New("specified string length is negative")
 	}
 
-	strBuf := buffer[4 : 4 + sz]
-	return string(strBuf), nil
+	if len(buffer) < sz {
+		return "", nil, BufferTooSmallError{}
+	}
+
+	return string(buffer[:4+sz]), buffer[4+sz:], nil
 }
 
 // Read an operand from the given slice
 // Returns an error if an invalid operand is specified or the slice is too small
-func ReadOperand(buffer []byte) (Operand, interface{}, error) {
+func ReadOperand(buffer []byte) (Operand, []byte, error) {
 	tp := buffer[0]
 	actual := buffer[1:]
 
-	switch Operand(tp) {
+	switch OpType(tp) {
 	case INTEGER:
-		data, err := ReadInt(actual)
-		return INTEGER, data, err
+		data, next, err := ReadInt(actual)
+		return Operand{tp: INTEGER, data: data}, next, err
 	case STRING:
-		data, err := ReadString(actual)
-		return STRING, data, err
+		data, next, err := ReadString(actual)
+		return Operand{tp: STRING, data: data}, next, err
 	default:
-		return 0, nil, errors.New("unknown operand specified")
+		return Operand{}, nil, errors.New("unknown operand specified")
 	}
 }
 
@@ -69,7 +79,7 @@ func ReadOperand(buffer []byte) (Operand, interface{}, error) {
 // Returns an error if the slice is not large enough
 func WriteInt(num int, buffer []byte) error {
 	if len(buffer) < 4 {
-		return errors.New("buffer is too small")
+		return BufferTooSmallError{}
 	}
 
 	binary.LittleEndian.PutUint32(buffer, uint32(num))
@@ -80,7 +90,7 @@ func WriteInt(num int, buffer []byte) error {
 // Returns an error if the slice is not big enough
 func WriteString(str string, buffer []byte) error {
 	if len(buffer) < 4 + len(str) {
-		return errors.New("buffer is too small")
+		return BufferTooSmallError{}
 	}
 
 	// error ignored because buffer is guaranteed large enough
@@ -91,14 +101,14 @@ func WriteString(str string, buffer []byte) error {
 }
 
 // Compute the number of bytes needed to store the particular operand
-func ComputeOperandSize(op Operand, data interface{}) int {
+func ComputeOperandSize(op Operand) int {
 	var sz = 1
 
-	switch op {
+	switch op.tp {
 	case INTEGER:
 		return sz + 4
 	case STRING:
-		return sz + 4 + len(data.(string))
+		return sz + 4 + len(op.data.(string))
 	}
 
 	return sz
@@ -106,20 +116,20 @@ func ComputeOperandSize(op Operand, data interface{}) int {
 
 // Write the operand into the provided slice
 // Returns an error if the slice is not large enough to store the operand
-func WriteOperand(op Operand, data interface{}, buffer []byte) error {
-	var tp = byte(op)
+func WriteOperand(op Operand, buffer []byte) error {
+	var tp = byte(op.tp)
 
-	if len(buffer) < ComputeOperandSize(op, data) {
-		return errors.New("buffer is too small")
+	if len(buffer) < ComputeOperandSize(op) {
+		return BufferTooSmallError{}
 	}
 
 	buffer[0] = tp
 
-	switch op {
+	switch op.tp {
 	case INTEGER:
-		_ = WriteInt(data.(int), buffer[1:])
+		_ = WriteInt(op.data.(int), buffer[1:])
 	case STRING:
-		_ = WriteString(data.(string), buffer[1:])
+		_ = WriteString(op.data.(string), buffer[1:])
 	}
 
 	return nil
