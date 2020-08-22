@@ -82,8 +82,14 @@ func (srv *ClientManager) processConn(conn net.Conn) {
 			cmd, next, err := protocol.ReadCommand(actual)
 
 			if err != nil {
-				// TODO should write an error msg back to the client and close the connection
 				if _, ok := err.(protocol.BufferTooSmallError); !ok {
+
+					// Construct an error response command
+					resp := protocol.NewError(err.Error())
+					respBuf, _ := protocol.WriteCommand(resp)
+
+					// Write the command back -- and return
+					_, _ = conn.Write(respBuf)
 					return
 				}
 

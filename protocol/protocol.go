@@ -83,7 +83,7 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 // Returns an error if the command type is invalid
 func getCommandByte(tp CommandType) (byte, error) {
 	switch tp {
-	case GET, PUT:
+	case GET, PUT, ERR:
 		return byte(tp), nil
 	default:
 		return 0, errors.New("invalid command type")
@@ -96,7 +96,7 @@ func getCommandType(cb byte) (CommandType, error) {
 	equiv := CommandType(cb)
 
 	switch equiv {
-	case GET, PUT:
+	case GET, PUT, ERR:
 		return equiv, nil
 	default:
 		return 0, errors.New("invalid command byte")
@@ -106,7 +106,7 @@ func getCommandType(cb byte) (CommandType, error) {
 // Returns whether the given command type takes an value operand or not
 func hasValueOperand(tp CommandType) bool {
 	switch tp {
-	case GET:
+	case GET, ERR:
 		return false
 	case PUT:
 		return true

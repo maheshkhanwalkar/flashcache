@@ -5,6 +5,7 @@ type CommandType int
 const (
 	PUT CommandType = iota
 	GET
+	ERR
 )
 
 type Command struct {
@@ -34,6 +35,18 @@ func NewPut(key string, value *Operand) *Command {
 
 	return cmd
 }
+
+// Create a new ERR command
+func NewError(msg string) *Command {
+	var cmd = new(Command)
+
+	cmd.tp = ERR
+	cmd.key = msg
+	cmd.value = nil
+
+	return cmd
+}
+
 
 func (c *Command) Type() CommandType {
 	return c.tp
