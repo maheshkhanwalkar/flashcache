@@ -104,6 +104,23 @@ func TestSmallBufferReadString(t *testing.T) {
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }
 
+func TestInvalidStringLength(t *testing.T) {
+	buffer := make([]byte, 10)
+	_, _ = protocol.WriteInt(-5, buffer)
+
+	// String length is negative -- error, but not BufferTooSmallError
+	_, _, err := protocol.ReadString(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	// String length exceeds the maximum string length allowed by the protocol
+	_, _ = protocol.WriteInt(protocol.MaxStringSize + 1, buffer)
+	_, _, err = protocol.ReadString(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
 
 // Test writing and reading back of an integer to a buffer
 func testReadWriteInt(i int, buffer []byte, t *testing.T) {
