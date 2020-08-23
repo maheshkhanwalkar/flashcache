@@ -56,7 +56,7 @@ func ReadString(buffer []byte) (string, []byte, error) {
 		return "", nil, BufferTooSmallError{}
 	}
 
-	return string(buffer[:4+sz]), buffer[4+sz:], nil
+	return string(buffer[:sz]), buffer[sz:], nil
 }
 
 // Read an operand from the given slice

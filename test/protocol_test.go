@@ -49,6 +49,24 @@ func TestSerialiseInt(t *testing.T) {
 	AssertEqual(len(diff), over, t)
 }
 
+// Test the serialisation and de-serialisation of various strings within the protocol
+func TestSerialiseString(t *testing.T) {
+	buffer := make([]byte, 4)
+
+	// Test empty string
+	next, err := protocol.WriteString("", buffer)
+
+	AssertEqual(len(next), 0, t)
+	AssertEqual(err, nil, t)
+
+	res, next, err := protocol.ReadString(buffer)
+
+	AssertEqual(len(next), 0, t)
+	AssertEqual(err, nil, t)
+	AssertEqual(res, "", t)
+}
+
+
 // Test writing and reading back of an integer to a buffer
 func testReadWriteInt(i int, buffer []byte, t *testing.T) {
 	next, err := protocol.WriteInt(i, buffer)
