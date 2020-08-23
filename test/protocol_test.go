@@ -7,6 +7,9 @@ import (
 	"testing"
 )
 
+// TODO: break up the large test case functions into many smaller ones, which will help with readability
+//  and maintainability of these tests in the future
+
 // Test the serialisation and de-serialisation of various integers within the protocol
 func TestSerialiseInt(t *testing.T) {
 	buffer := make([]byte, 4)
@@ -49,8 +52,8 @@ func TestSerialiseInt(t *testing.T) {
 	AssertEqual(len(diff), over, t)
 }
 
-// Test the serialisation and de-serialisation of various strings within the protocol
-func TestSerialiseString(t *testing.T) {
+// Test the serialisation and de-serialisation of empty strings within the protocol
+func TestEmptyString(t *testing.T) {
 	buffer := make([]byte, 4)
 
 	// Test empty string
@@ -64,6 +67,41 @@ func TestSerialiseString(t *testing.T) {
 	AssertEqual(len(next), 0, t)
 	AssertEqual(err, nil, t)
 	AssertEqual(res, "", t)
+}
+
+func TestSmallBufferWriteString(t *testing.T) {
+	buffer := make([]byte, 6)
+
+	// Buffer large enough for size, but too small for actual string
+	_, err := protocol.WriteString("hello", buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	// Buffer too small for even the size
+	buffer = buffer[:2]
+	_, err = protocol.WriteString("hello", buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
+
+func TestSmallBufferReadString(t *testing.T) {
+	buffer := make([]byte, 6)
+	_, _ = protocol.WriteInt(5, buffer)
+
+	// Buffer large enough for size, but too small for actual string
+	_, _, err := protocol.ReadString(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	// Buffer too small for even the size
+	buffer = buffer[:2]
+	_, _, err = protocol.ReadString(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }
 
 
