@@ -7,36 +7,44 @@ import (
 	"testing"
 )
 
-// TODO: break up the large test case functions into many smaller ones, which will help with readability
-//  and maintainability of these tests in the future
-
-// Test the serialisation and de-serialisation of various integers within the protocol
-func TestSerialiseInt(t *testing.T) {
+// Test a range of positive, zero, and negative integers
+func TestRangeInt(t *testing.T) {
 	buffer := make([]byte, 4)
 
-	// Test a range of numbers
 	for i := -1000; i < 1000; i++ {
 		testReadWriteInt(i, buffer, t)
 	}
+}
+
+// Test both integer extremes (max and min integers) within ReadInt and WriteInt
+func TestExtremeInt(t *testing.T) {
+	buffer := make([]byte, 4)
 
 	// Test both extremes
 	testReadWriteInt(math.MaxInt32, buffer, t)
 	testReadWriteInt(math.MinInt32, buffer, t)
+}
 
-	// Test buffer too small -- WriteInt
+// Test small buffer for WriteInt
+func TestSmallBufferWriteInt(t *testing.T) {
 	small := make([]byte, 1)
 	_, err := protocol.WriteInt(0, small)
 
 	AssertNotEqual(err, nil, t)
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
 
-	// Test buffer too small -- ReadInt
-	_, _, err = protocol.ReadInt(small)
+// Test small buffer for ReadInt
+func TestSmallBufferReadInt(t *testing.T) {
+	small := make([]byte, 1)
+	_, _, err := protocol.ReadInt(small)
 
 	AssertNotEqual(err, nil, t)
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
 
-	// Test buffer is larger -- WriteInt
+// Test buffer is larger for WriteInt
+func TestLargeBufferWriteInt(t *testing.T) {
 	over := 100
 	large := make([]byte, 4 + over)
 
@@ -45,8 +53,15 @@ func TestSerialiseInt(t *testing.T) {
 	AssertEqual(err, nil, t)
 	AssertEqual(len(diff), over, t)
 
-	// Test buffer is larger -- ReadInt
-	_, diff, err = protocol.ReadInt(large)
+}
+
+// Test buffer is larger for ReadInt
+func TestLargeBufferReadInt(t *testing.T) {
+	over := 100
+	large := make([]byte, 4 + over)
+
+
+	_, diff, err := protocol.ReadInt(large)
 
 	AssertEqual(err, nil, t)
 	AssertEqual(len(diff), over, t)
