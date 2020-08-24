@@ -5,20 +5,6 @@ import (
 	"errors"
 )
 
-// Operand type
-type OpType int
-
-const (
-	INTEGER OpType = iota
-	STRING
-)
-
-// Operand
-type Operand struct {
-	tp OpType
-	data interface{}
-}
-
 const (
 	MaxStringSize = 512
 )
@@ -59,24 +45,6 @@ func ReadString(buffer []byte) (string, []byte, error) {
 	return string(buffer[:sz]), buffer[sz:], nil
 }
 
-// Read an operand from the given slice
-// Returns an error if an invalid operand is specified or the slice is too small
-func ReadOperand(buffer []byte) (Operand, []byte, error) {
-	tp := buffer[0]
-	actual := buffer[1:]
-
-	switch OpType(tp) {
-	case INTEGER:
-		data, next, err := ReadInt(actual)
-		return Operand{tp: INTEGER, data: data}, next, err
-	case STRING:
-		data, next, err := ReadString(actual)
-		return Operand{tp: STRING, data: data}, next, err
-	default:
-		return Operand{}, nil, errors.New("unknown operand specified")
-	}
-}
-
 // Write the integer into the provided slice and return a new slice pointing to the first byte not processed.
 // Returns an error if the slice is not large enough
 func WriteInt(num int, buffer []byte) ([]byte, error) {
@@ -100,39 +68,4 @@ func WriteString(str string, buffer []byte) ([]byte, error) {
 	copy(buffer, str)
 
 	return buffer[len(str):], nil
-}
-
-// Compute the number of bytes needed to store the particular operand
-func ComputeOperandSize(op *Operand) int {
-	var sz = 1
-
-	switch op.tp {
-	case INTEGER:
-		return sz + 4
-	case STRING:
-		return sz + 4 + len(op.data.(string))
-	}
-
-	return sz
-}
-
-// Write the operand into the provided slice
-// Returns an error if the slice is not large enough to store the operand
-func WriteOperand(op *Operand, buffer []byte) ([]byte, error) {
-	var tp = byte(op.tp)
-
-	if len(buffer) < ComputeOperandSize(op) {
-		return nil, BufferTooSmallError{}
-	}
-
-	buffer[0] = tp
-
-	switch op.tp {
-	case INTEGER:
-		buffer, _ = WriteInt(op.data.(int), buffer[1:])
-	case STRING:
-		buffer, _ = WriteString(op.data.(string), buffer[1:])
-	}
-
-	return buffer, nil
 }

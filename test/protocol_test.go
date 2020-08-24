@@ -119,6 +119,8 @@ func TestSmallBufferReadString(t *testing.T) {
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }
 
+// TODO add tests for larger buffer for {Read, Write}String functions
+
 func TestInvalidStringLength(t *testing.T) {
 	buffer := make([]byte, 10)
 	_, _ = protocol.WriteInt(-5, buffer)
