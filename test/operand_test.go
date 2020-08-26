@@ -2,6 +2,8 @@ package test
 
 import (
 	"flashcache/protocol"
+	"math"
+	"reflect"
 	"testing"
 )
 
@@ -61,4 +63,28 @@ func TestStringOperand(t *testing.T) {
 	AssertEqual(len(next), 0, t)
 	AssertEqual(dup.Type(), op.Type(), t)
 	AssertEqual(dup.Data(), op.Data(), t)
+}
+
+func TestBufferTooSmall(t *testing.T) {
+	buffer := make([]byte, 1)
+	_, _, err := protocol.ReadOperand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	op, err := protocol.NewOperand(protocol.INTEGER, 5)
+	_, err = protocol.WriteOperand(op, buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
+
+func TestInvalidOperandByte(t *testing.T) {
+	buffer := make([]byte, 2)
+	buffer[0] = math.MaxInt8
+
+	_, _, err := protocol.ReadOperand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }

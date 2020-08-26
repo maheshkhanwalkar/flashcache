@@ -50,6 +50,10 @@ func (op *Operand) Data() interface{} {
 // Read an operand from the given slice
 // Returns an error if an invalid operand is specified or the slice is too small
 func ReadOperand(buffer []byte) (Operand, []byte, error) {
+	if len(buffer) < 2 {
+		return Operand{}, nil, BufferTooSmallError{}
+	}
+
 	tp := buffer[0]
 	actual := buffer[1:]
 
