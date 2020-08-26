@@ -42,3 +42,23 @@ func TestIntOperand(t *testing.T) {
 	AssertEqual(dup.Type(), op.Type(), t)
 	AssertEqual(dup.Data(), op.Data(), t)
 }
+
+func TestStringOperand(t *testing.T) {
+	op, err := protocol.NewOperand(protocol.STRING, "hello world")
+	AssertEqual(err, nil, t)
+
+	size := protocol.ComputeOperandSize(op)
+	buf := make([]byte, size)
+
+	next, err := protocol.WriteOperand(op, buf)
+
+	AssertEqual(err, nil, t)
+	AssertEqual(len(next), 0, t)
+
+	dup, next, err := protocol.ReadOperand(buf)
+
+	AssertEqual(err, nil, t)
+	AssertEqual(len(next), 0, t)
+	AssertEqual(dup.Type(), op.Type(), t)
+	AssertEqual(dup.Data(), op.Data(), t)
+}

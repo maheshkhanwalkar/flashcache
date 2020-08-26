@@ -71,9 +71,9 @@ func ComputeOperandSize(op *Operand) int {
 
 	switch op.tp {
 	case INTEGER:
-		return sz + 4
+		sz += 4
 	case STRING:
-		return sz + 4 + len(op.data.(string))
+		sz += 4 + len(op.data.(string))
 	}
 
 	return sz
