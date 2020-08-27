@@ -20,15 +20,13 @@ func ReadCommand(buffer []byte) (*Command, []byte, error) {
 	cmd := new(Command)
 	cmd.tp = tp
 
-	// TODO: perhaps the key should be generalised to not necessarily assume a string, but
-	//  could be *anything*, i.e. represent it using an operand just like value...
-	key, buffer, err := ReadString(buffer[1:])
+	key, buffer, err := ReadOperand(buffer[1:])
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	cmd.key = key
+	cmd.key = &key
 
 	if hasValueOperand(cmd.tp) {
 		op, buffer, err := ReadOperand(buffer)
@@ -52,13 +50,8 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 	// FIXME: the size computation for the key should really be delegated to the string handling
 	//  code rather than doing it here -- abstraction leak!
 
-	var keySize = len(cmd.key)
-
-	if keySize > MaxStringSize || keySize < 0 {
-		return nil, errors.New("provided key is too long or negative")
-	}
-
-	var bufSize = 1 + 2 + keySize
+	var keySize = ComputeOperandSize(cmd.key)
+	var bufSize = 1 + keySize
 
 	// Add operand size to the total buffer space
 	if hasValueOperand(cmd.tp) {
@@ -69,7 +62,7 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 
 	// Command byte, key size, key
 	buffer[0] = cb
-	next, _ := WriteString(cmd.key, buffer[1:])
+	next, _ := WriteOperand(cmd.key, buffer[1:])
 
 	// Write the value operand if it exists
 	if hasValueOperand(cmd.tp) {
