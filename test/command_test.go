@@ -2,6 +2,7 @@ package test
 
 import (
 	"flashcache/protocol"
+	"reflect"
 	"testing"
 )
 
@@ -20,6 +21,14 @@ func TestEmptyOperands(t *testing.T) {
 
 	cmd = protocol.NewPut("", value)
 	readWrite(cmd, t)
+}
+
+func TestSmallBuffer(t *testing.T) {
+	buffer := make([]byte, 2)
+	_, _, err := protocol.ReadCommand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }
 
 func readWrite(cmd *protocol.Command, t *testing.T) {

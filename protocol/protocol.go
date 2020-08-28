@@ -72,17 +72,6 @@ func WriteCommand(cmd *Command) ([]byte, error) {
 	return buffer, nil
 }
 
-// Get the command byte value for the given command type
-// Returns an error if the command type is invalid
-func getCommandByte(tp CommandType) (byte, error) {
-	switch tp {
-	case GET, PUT, ERR:
-		return byte(tp), nil
-	default:
-		return 0, errors.New("invalid command type")
-	}
-}
-
 // Get the command type associated with the given command byte value
 // Returns an error if the command byte is invalid
 func getCommandType(cb byte) (CommandType, error) {
