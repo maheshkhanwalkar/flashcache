@@ -25,8 +25,26 @@ func TestEmptyOperands(t *testing.T) {
 }
 
 func TestSmallBuffer(t *testing.T) {
-	buffer := make([]byte, 2)
+	// Too small -- doesn't even have command byte
+	buffer := make([]byte, 0)
 	_, _, err := protocol.ReadCommand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	// Too small -- doesn't have full key
+	buffer = make([]byte, 2)
+	_, _, err = protocol.ReadCommand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+
+	// Too small -- doesn't have full value
+	op, _ := protocol.NewOperand(protocol.STRING, "value")
+	cmd := protocol.NewPut("key", op)
+
+	buffer, _ = protocol.WriteCommand(cmd)
+	_, _, err = protocol.ReadCommand(buffer[:len(buffer)-2])
 
 	AssertNotEqual(err, nil, t)
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
