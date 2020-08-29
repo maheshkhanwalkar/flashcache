@@ -2,6 +2,7 @@ package test
 
 import (
 	"flashcache/protocol"
+	"math"
 	"reflect"
 	"testing"
 )
@@ -29,6 +30,16 @@ func TestSmallBuffer(t *testing.T) {
 
 	AssertNotEqual(err, nil, t)
 	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+}
+
+func TestInvalidCommandByte(t *testing.T) {
+	buffer := make([]byte, 2)
+	buffer[0] = math.MaxInt8
+
+	_, _, err := protocol.ReadCommand(buffer)
+
+	AssertNotEqual(err, nil, t)
+	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
 }
 
 func readWrite(cmd *protocol.Command, t *testing.T) {
