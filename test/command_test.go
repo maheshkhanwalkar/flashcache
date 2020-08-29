@@ -10,6 +10,9 @@ import (
 func TestGetReadWrite(t *testing.T) {
 	cmd := protocol.NewGet("my-key")
 	readWrite(cmd, t)
+
+	cmd = protocol.NewError("my-error")
+	readWrite(cmd, t)
 }
 
 func TestEmptyOperands(t *testing.T) {
