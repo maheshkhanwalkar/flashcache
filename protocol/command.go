@@ -12,8 +12,7 @@ const (
 
 type Command struct {
 	tp    CommandType
-	key   *Operand
-	value *Operand
+	ops []Operand
 }
 
 // Create a new GET command
@@ -21,9 +20,9 @@ func NewGet(key string) *Command {
 	var cmd = new(Command)
 
 	cmd.tp = GET
-	cmd.key = &Operand{tp: STRING, data: key}
-	cmd.value = nil
+	cmd.ops = make([]Operand, 1)
 
+	cmd.ops[0] = Operand{tp: STRING, data: key}
 	return cmd
 }
 
@@ -32,8 +31,10 @@ func NewPut(key string, value *Operand) *Command {
 	var cmd = new(Command)
 
 	cmd.tp = PUT
-	cmd.key = &Operand{tp: STRING, data: key}
-	cmd.value = value
+	cmd.ops = make([]Operand, 2)
+
+	cmd.ops[0] = Operand{tp: STRING, data: key}
+	cmd.ops[1] = *value
 
 	return cmd
 }
@@ -43,9 +44,9 @@ func NewError(msg string) *Command {
 	var cmd = new(Command)
 
 	cmd.tp = ERR
-	cmd.key = &Operand{tp: STRING, data: msg}
-	cmd.value = nil
+	cmd.ops = make([]Operand, 1)
 
+	cmd.ops[0] = Operand{tp: STRING, data: msg}
 	return cmd
 }
 
@@ -55,11 +56,15 @@ func (c *Command) Type() CommandType {
 }
 
 func (c *Command) Key() string {
-	return c.key.data.(string)
+	return c.ops[0].data.(string)
 }
 
 func (c *Command) Value() *Operand {
-	return c.value
+	if len(c.ops) == 1 {
+		return nil
+	}
+
+	return &c.ops[1]
 }
 
 // Read a command from the input buffer and return the constructed object along with a new slice
@@ -69,6 +74,7 @@ func ReadCommand(buffer []byte) (*Command, []byte, error) {
 		return nil, nil, BufferTooSmallError{}
 	}
 
+	// Read command byte
 	tp, err := getCommandType(buffer[0])
 
 	if err != nil {
@@ -78,23 +84,25 @@ func ReadCommand(buffer []byte) (*Command, []byte, error) {
 	cmd := new(Command)
 	cmd.tp = tp
 
-	key, buffer, err := ReadOperand(buffer[1:])
+	// Read number of operands
+	numOps, buffer, err := ReadInt(buffer[1:])
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	cmd.key = &key
+	cmd.ops = make([]Operand, numOps)
 
-	if hasValueOperand(cmd.tp) {
-		op, buffer, err := ReadOperand(buffer)
+	// Read each of the operands
+	for i := 0; i < numOps; i++ {
+		var op Operand
+		op, buffer, err = ReadOperand(buffer)
 
 		if err != nil {
 			return nil, nil, err
 		}
 
-		cmd.value = &op
-		return cmd, buffer, nil
+		cmd.ops[i] = op
 	}
 
 	return cmd, buffer, nil
@@ -104,27 +112,21 @@ func ReadCommand(buffer []byte) (*Command, []byte, error) {
 // and parsed back into its original object form
 func WriteCommand(cmd *Command) ([]byte, error) {
 	var cb = byte(cmd.tp)
+	var numOps = len(cmd.ops)
 
-	// FIXME: the size computation for the key should really be delegated to the string handling
-	//  code rather than doing it here -- abstraction leak!
+	var bufSize = 1 + 4
 
-	var keySize = ComputeOperandSize(cmd.key)
-	var bufSize = 1 + keySize
-
-	// Add operand size to the total buffer space
-	if hasValueOperand(cmd.tp) {
-		bufSize += ComputeOperandSize(cmd.value)
+	for i := 0; i < numOps; i++ {
+		bufSize += ComputeOperandSize(&cmd.ops[i])
 	}
 
 	var buffer = make([]byte, bufSize)
-
-	// Command byte, key size, key
 	buffer[0] = cb
-	next, _ := WriteOperand(cmd.key, buffer[1:])
 
-	// Write the value operand if it exists
-	if hasValueOperand(cmd.tp) {
-		_, _ = WriteOperand(cmd.value, next)
+	next, _ := WriteInt(numOps, buffer[1:])
+
+	for i := 0; i < numOps; i++ {
+		next, _ = WriteOperand(&cmd.ops[i], next)
 	}
 
 	return buffer, nil
