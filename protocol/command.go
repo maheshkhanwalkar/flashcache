@@ -144,15 +144,3 @@ func getCommandType(cb byte) (CommandType, error) {
 		return 0, errors.New("invalid command byte")
 	}
 }
-
-// Returns whether the given command type takes an value operand or not
-func hasValueOperand(tp CommandType) bool {
-	switch tp {
-	case GET, ERR:
-		return false
-	case PUT:
-		return true
-	default:
-		return false
-	}
-}
