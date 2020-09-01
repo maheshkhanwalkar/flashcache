@@ -129,14 +129,14 @@ func TestInvalidStringLength(t *testing.T) {
 	_, _, err := protocol.ReadString(buffer)
 
 	AssertNotEqual(err, nil, t)
-	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.InvalidStringLengthError{}), t)
 
 	// String length exceeds the maximum string length allowed by the protocol
 	_, _ = protocol.WriteInt(protocol.MaxStringSize + 1, buffer)
 	_, _, err = protocol.ReadString(buffer)
 
 	AssertNotEqual(err, nil, t)
-	AssertNotEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.BufferTooSmallError{}), t)
+	AssertEqual(reflect.TypeOf(err), reflect.TypeOf(protocol.InvalidStringLengthError{}), t)
 }
 
 // Test writing and reading back of an integer to a buffer
