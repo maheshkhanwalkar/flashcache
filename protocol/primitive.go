@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/binary"
-	"errors"
 )
 
 const (
@@ -31,11 +30,11 @@ func ReadString(buffer []byte) (string, []byte, error) {
 	}
 
 	if sz > MaxStringSize {
-		return "", nil, errors.New("specified string length is too long")
+		return "", nil, InvalidStringLengthError{msg: "too long"}
 	}
 
 	if sz < 0 {
-		return "", nil, errors.New("specified string length is negative")
+		return "", nil, InvalidStringLengthError{msg: "negative"}
 	}
 
 	if len(buffer) < sz {
