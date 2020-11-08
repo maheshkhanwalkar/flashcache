@@ -52,6 +52,15 @@ class Server(private val port: Int) {
 
     private fun processClient(key: SelectionKey) {
         val client = key.channel() as SocketChannel
-        TODO("read data from client and process it")
+        val cmd = readCommand(client, quit)
+
+        // Close the client on error
+        if(cmd == null) {
+            key.cancel()
+            client.close()
+            return
+        }
+
+        TODO("execute the command")
     }
 }
