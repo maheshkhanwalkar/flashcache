@@ -11,10 +11,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 class Server(private val port: Int) {
     private lateinit var socket: ServerSocketChannel
     private lateinit var selector: Selector
+    private lateinit var engine: Engine
 
     private val quit = AtomicBoolean(false)
 
     fun start() {
+        engine = Engine()
+
         socket = ServerSocketChannel.open().bind(InetSocketAddress(port))
         selector = Selector.open()
 
@@ -61,6 +64,8 @@ class Server(private val port: Int) {
             return
         }
 
-        TODO("execute the command")
+        // Execute and reply with the response
+        val resp = engine.execute(cmd)
+        writeResponse(client, resp)
     }
 }

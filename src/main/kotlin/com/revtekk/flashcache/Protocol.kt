@@ -42,6 +42,25 @@ internal fun readCommand(client: SocketChannel, quit: AtomicBoolean): Command? {
 }
 
 /**
+ * Write the response to the client channel
+ */
+internal fun writeResponse(client: SocketChannel, resp: Response) {
+    val size = if(resp.data == null) 0 else resp.data.size
+    val type = resp.type.value
+
+    val buffer = ByteBuffer.allocateDirect(4 + type + size)
+
+    buffer.putInt(size)
+    buffer.put(type)
+
+    if(resp.data != null)
+        buffer.put(resp.data.toByteArray())
+
+    buffer.flip()
+    client.write(buffer)
+}
+
+/**
  * Read the entire amount specified and return the byte buffer
  *
  * If there is an exception or no more data available, then the method will return null, since it

@@ -1,5 +1,7 @@
 package com.revtekk.flashcache
 
+data class Command(val type: CommandType, val key: String, val value: List<Byte>?)
+
 enum class CommandType(val value: Byte) {
     GET(0), PUT(1);
 
@@ -7,5 +9,3 @@ enum class CommandType(val value: Byte) {
         fun fromRaw(value: Byte): CommandType? = values().firstOrNull { type -> type.value == value }
     }
 }
-
-data class Command(val type: CommandType, val key: String, val value: List<Byte>?)
