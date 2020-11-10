@@ -42,6 +42,57 @@ internal fun readCommand(client: SocketChannel, quit: AtomicBoolean): Command? {
 }
 
 /**
+ * Write the command to the server channel
+ */
+internal fun writeCommand(server: SocketChannel, cmd: Command) {
+    val size = if(cmd.value == null) 0 else cmd.value.size
+    val type = cmd.type.value
+    val keySize = cmd.key.length
+
+    val buffer = ByteBuffer.allocateDirect(4 + 1 + 4 + keySize + size)
+
+    buffer.putInt(size)
+    buffer.put(type)
+    buffer.putInt(keySize)
+    buffer.put(cmd.key.toByteArray())
+
+    if(cmd.value != null)
+        buffer.put(cmd.value.toByteArray())
+
+    buffer.flip()
+    server.write(buffer)
+}
+
+/**
+ * Read a response from the server channel
+ *
+ * For simplicity, this method returns null if it encounters any kind of error,
+ * whether it be I/O related or bad format
+ */
+internal fun readResponse(client: SocketChannel): Response? {
+    val fake = AtomicBoolean()
+
+    val szBytes = forceReadOrNull(client, fake, 4) ?: return null
+    val size = szBytes.int
+
+    if(size < 0) {
+        return null
+    }
+
+    val typeBytes = forceReadOrNull(client, fake, 1) ?: return null
+    val type = ResponseType.fromRaw(typeBytes.get()) ?: return null
+
+    val data = if(size == 0) {
+        null
+    } else {
+        val raw = forceReadOrNull(client, fake, size) ?: return null
+        raw.array().toList()
+    }
+
+    return Response(type, data)
+}
+
+/**
  * Write the response to the client channel
  */
 internal fun writeResponse(client: SocketChannel, resp: Response) {
