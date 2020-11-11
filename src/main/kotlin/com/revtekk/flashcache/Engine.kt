@@ -5,14 +5,22 @@ class Engine {
 
     fun execute(cmd: Command): Response {
         return when(cmd.type) {
-            CommandType.GET -> Response(ResponseType.DATA, map[cmd.key])
-            CommandType.PUT -> {
-                if(cmd.value != null) {
-                    map[cmd.key] = cmd.value
-                }
-
-                Response(ResponseType.OK, null)
-            }
+            CommandType.GET -> executeGet(cmd.key)
+            CommandType.PUT -> executePut(cmd.key, cmd.value)
         }
     }
+
+    private fun executeGet(key: String): Response =
+        if (key !in map)
+            Response(ResponseType.ERR, "key does not exist".toByteArray().toList())
+        else
+            Response(ResponseType.DATA, map[key])
+
+    private fun executePut(key: String, value: List<Byte>?): Response =
+        if(value == null)
+            Response(ResponseType.ERR, "no value provided".toByteArray().toList())
+        else {
+            map[key] = value
+            Response(ResponseType.OK, null)
+        }
 }
