@@ -35,7 +35,7 @@ internal fun readCommand(client: SocketChannel, quit: AtomicBoolean): Command? {
         null
     } else {
         val raw = forceReadOrNull(client, quit, size) ?: return null
-        raw.array().toList()
+        raw.array()
     }
 
     return Command(type, key, value)
@@ -57,7 +57,7 @@ internal fun writeCommand(server: SocketChannel, cmd: Command) {
     buffer.put(cmd.key.toByteArray())
 
     if(cmd.value != null)
-        buffer.put(cmd.value.toByteArray())
+        buffer.put(cmd.value)
 
     buffer.flip()
     server.write(buffer)
@@ -86,7 +86,7 @@ internal fun readResponse(client: SocketChannel): Response? {
         null
     } else {
         val raw = forceReadOrNull(client, fake, size) ?: return null
-        raw.array().toList()
+        raw.array()
     }
 
     return Response(type, data)
@@ -105,7 +105,7 @@ internal fun writeResponse(client: SocketChannel, resp: Response) {
     buffer.put(type)
 
     if(resp.data != null)
-        buffer.put(resp.data.toByteArray())
+        buffer.put(resp.data)
 
     buffer.flip()
     client.write(buffer)

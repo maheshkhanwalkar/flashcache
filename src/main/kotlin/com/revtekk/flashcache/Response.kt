@@ -1,6 +1,6 @@
 package com.revtekk.flashcache
 
-data class Response(val type: ResponseType, val data: List<Byte>?)
+class Response(val type: ResponseType, val data: ByteArray?)
 
 enum class ResponseType(val value: Byte) {
     OK(0), DATA(1), ERR(2);
