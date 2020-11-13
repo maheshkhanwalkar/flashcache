@@ -45,4 +45,28 @@ class TestEngine {
         assertNotNull(get.data)
         assertEquals(fromBytesToString(get.data!!), "value1")
     }
+
+    @Test
+    fun testContains()
+    {
+        var res = engine.execute(Command(CommandType.CONTAINS, "key", null))
+        assertEquals(res.type, ResponseType.FALSE)
+
+        engine.execute(Command(CommandType.PUT, "key", "value".toByteArray()))
+        res = engine.execute(Command(CommandType.CONTAINS, "key", null))
+        assertEquals(res.type, ResponseType.TRUE)
+    }
+
+    @Test
+    fun testDelete()
+    {
+        engine.execute(Command(CommandType.PUT, "key", "value".toByteArray()))
+        var res = engine.execute(Command(CommandType.DELETE, "key", null))
+
+        assertEquals(res.type, ResponseType.DATA)
+        assertEquals(fromBytesToString(res.data!!), "value")
+
+        res = engine.execute(Command(CommandType.CONTAINS, "key", null))
+        assertEquals(res.type, ResponseType.FALSE)
+    }
 }

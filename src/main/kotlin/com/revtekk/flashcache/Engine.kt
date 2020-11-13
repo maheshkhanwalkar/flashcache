@@ -7,6 +7,8 @@ class Engine {
         return when(cmd.type) {
             CommandType.GET -> executeGet(cmd.key)
             CommandType.PUT -> executePut(cmd.key, cmd.value)
+            CommandType.CONTAINS -> executeContains(cmd.key)
+            CommandType.DELETE -> executeDelete(cmd.key)
         }
     }
 
@@ -23,4 +25,14 @@ class Engine {
             map[key] = value
             Response(ResponseType.OK, null)
         }
+
+    private fun executeContains(key: String): Response {
+        val type = if (key in map) ResponseType.TRUE else ResponseType.FALSE
+        return Response(type, null)
+    }
+
+    private fun executeDelete(key: String): Response {
+        val value = map.remove(key) ?: return Response(ResponseType.ERR, "key does not exist".toByteArray())
+        return Response(ResponseType.DATA, value)
+    }
 }
